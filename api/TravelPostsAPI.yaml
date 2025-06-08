@@ -22,7 +22,9 @@ paths:
         '201':
           description: Пользователь зарегистрирован
         '400':
-          description: Пользователь уже существует
+          description: Пользователь уже 
+        '500':
+          description: Внутренняя ошибка сервера
   
   /auth/login:
     post:
@@ -43,6 +45,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokenResponse'
+        '500':
+          description: Внутренняя ошибка сервера
          
   /auth/refresh:
     post:
@@ -66,6 +70,8 @@ paths:
                 properties:
                   accessToken:
                     type: string
+        '500':
+          description: Внутренняя ошибка сервера
   
   /auth/logout:
     post:
@@ -82,6 +88,8 @@ paths:
       responses:
         '200':
           description: Выход выполнен
+        '500':
+          description: Внутренняя ошибка сервера
   
   /posts:
     get:
@@ -109,6 +117,12 @@ paths:
             default: 5
             minimum: 1
             maximum: 5
+        - name: location
+          in: query
+          description: Фильтр по местоположению (если не указан - возвращает ленту подписок)
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Лента постов
@@ -125,6 +139,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
         
     post:
       security:
@@ -145,6 +161,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
     
   /posts/{postId}:
     get:
@@ -174,6 +192,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
           
     delete:
       security:
@@ -194,12 +214,14 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
           
   /posts/{postId}/comments:
     get:
       security:
         - bearerAuth: []
-      summary: Получить комментарии к посту
+      summary: Получить комментарии к посту (курсорная пагинация по ID последнего полученного комментария)
       tags:
         - Comments
       parameters:
@@ -208,21 +230,48 @@ paths:
           required: true
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Количество комментариев на странице (максимум 10)
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 10
+        - name: cursor
+          in: query
+          description: Курсор для пагинации (ID последнего полученного комментария)
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Список комментариев
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CommentResponse'
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommentResponse'
+                  nextCursor:
+                    type: string
+                    description: Курсор для получения следующей страницы
+                    example: "comment123456"
+                  hasMore:
+                    type: boolean
+                    description: Есть ли еще комментарии для загрузки
         '400':
           description: Пост не найден
         '401':
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
          
     post:
       security:
@@ -255,8 +304,48 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
           
   /posts/{postId}/likes:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получить информацию о лайках поста
+      description: Возвращает общее количество лайков и статус текущего пользователя
+      tags:
+        - Likes
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация о лайках
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likesCount:
+                    type: integer
+                    description: Общее количество лайков
+                    example: 42
+                  isLiked:
+                    type: boolean
+                    description: Поставил ли текущий пользователь лайк
+                    example: true
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
     post:
       security:
         - bearerAuth: []
@@ -278,6 +367,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
           
     delete:
       security:
@@ -300,6 +391,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
     
   /users/{userId}/subscriptions:
     post:
@@ -323,6 +416,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
     
     delete:
       security:
@@ -345,8 +440,10 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
           
-  /locations/popular:
+  /locations:
     get:
       security:
         - bearerAuth: []
@@ -375,50 +472,8 @@ paths:
           description: Отсутствует токен в заголовке
         '403':
           description: Данные токена недействительны
-  
-  /locations/{location}/posts:
-    get:
-      security:
-        - bearerAuth: []
-      summary: Получить посты по местоположению
-      description: Просмотр постов с определенного места путешествия
-      tags:
-        - Locations
-      parameters:
-        - name: location
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Название местоположения
-        - name: page
-          in: query
-          description: Номер страницы (начинается с 1)
-          required: false
-          schema:
-            type: integer
-            default: 1
-            minimum: 1
-        - name: pageSize
-          in: query
-          description: Количество постов на странице (максимум 5)
-          required: false
-          schema:
-            type: integer
-            default: 5
-            minimum: 1
-            maximum: 5
-      responses:
-        '200':
-          description: Список постов по местоположению
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedPostsResponse'
-        '401':
-          description: Отсутствует токен в заголовке
-        '403':
-          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
 
 components:
   securitySchemes:
