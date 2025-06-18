@@ -1,0 +1,639 @@
+﻿openapi: 3.0.0
+
+info:
+  title: Travel Posts API - OpenAPI 3.0
+  description: API для публикации постов о путешествиях
+  version: 1.0.0
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      description : Добавление пользователя по логину и паролю
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+      responses:
+        '201':
+          description: Пользователь зарегистрирован
+        '400':
+          description: Пользователь уже 
+        '500':
+          description: Внутренняя ошибка сервера
+  
+  /auth/login:
+    post:
+      summary: Вход пользователя
+      description : Вход пользователя по логину и паролю
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Успешный вход, возвращён access и refresh токены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+         
+  /auth/refresh:
+    post:
+      summary: Обновление токена
+      description: Обновление access токена по refresh токену
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Новый access токен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '500':
+          description: Внутренняя ошибка сервера
+  
+  /auth/logout:
+    post:
+      summary: Отзыв refresh токена
+      description: Отзыв refresh токена
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Выход выполнен
+        '500':
+          description: Внутренняя ошибка сервера
+  
+  /posts:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получить ленту пользователя
+      description: Получить ленту пользователя (подписки) с пагинацией в обратном хронологическом порядке
+      tags:
+        - Posts
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начинается с 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          description: Количество постов на странице (максимум 5)
+          required: false
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 5
+        - name: location
+          in: query
+          description: Фильтр по местоположению (если не указан - возвращает ленту подписок)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Лента постов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaginatedPostsResponse'
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+        
+    post:
+      security:
+        - bearerAuth: []
+      summary: Создать пост о путешествии
+      tags:
+        - Posts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Пост создан
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+    
+  /posts/{postId}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получение поста по Id
+      tags:
+        - Posts
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация в посте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '201':
+          description: Пост получен
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Удалить свой пост
+      tags:
+        - Posts
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Пост успешно удалён
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+  /posts/{postId}/comments:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получить комментарии к посту (курсорная пагинация по ID последнего полученного комментария)
+      tags:
+        - Comments
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Количество комментариев на странице (максимум 10)
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 10
+        - name: cursor
+          in: query
+          description: Курсор для пагинации (ID последнего полученного комментария)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список комментариев
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommentResponse'
+                  nextCursor:
+                    type: string
+                    description: Курсор для получения следующей страницы
+                    example: "comment123456"
+                  hasMore:
+                    type: boolean
+                    description: Есть ли еще комментарии для загрузки
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+         
+    post:
+      security:
+        - bearerAuth: []
+      summary: Добавить комментарий к посту
+      tags:
+        - Comments
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Комментарий создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+  /posts/{postId}/likes:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получить информацию о лайках поста
+      description: Возвращает общее количество лайков и статус текущего пользователя
+      tags:
+        - Likes
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация о лайках
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likesCount:
+                    type: integer
+                    description: Общее количество лайков
+                    example: 42
+                  isLiked:
+                    type: boolean
+                    description: Поставил ли текущий пользователь лайк
+                    example: true
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+    post:
+      security:
+        - bearerAuth: []
+      summary: Поставить лайк посту
+      tags:
+        - Likes
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Лайк успешно поставлен
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Убрать лайк с поста
+      tags:
+        - Likes
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Лайк успешно удалён
+        '400':
+          description: Пост не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+    
+  /users/{userId}/subscriptions:
+    post:
+      security:
+        - bearerAuth: []
+      summary: Подписаться на пользователя
+      tags:
+        - Subscriptions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Подписка оформлена
+        '400':
+          description: Пользователь не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+    
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Отписаться от пользователя
+      tags:
+        - Subscriptions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Подписка отменена
+        '400':
+          description: Пользователь не найден
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+          
+  /locations:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Получить список популярных мест для путешествий
+      tags:
+        - Locations
+      parameters:
+        - name: limit
+          in: query
+          description: Максимальное количество мест
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+      responses:
+        '200':
+          description: Список популярных мест
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '401':
+          description: Отсутствует токен в заголовке
+        '403':
+          description: Данные токена недействительны
+        '500':
+          description: Внутренняя ошибка сервера
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    # Запросы
+    
+    # Auth
+    UserRegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example : "test"
+        password:
+          type: string
+          example : "qwerty"
+          
+    UserLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example : "test"
+        password:
+          type: string
+          example : "qwerty"
+    
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+    
+    # Posts     
+    CreatePostRequest:
+      type: object
+      required: [ description, location, imageUrl ]
+      properties:
+        description:
+          type: string
+          example: Мое путешествие в Адыгею!
+        location:
+          type: string
+          example: Адыгея, Россия
+        imageUrl:
+          type: string
+          example: https://example.com/image.jpg
+    
+    # Comments
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          example: Очень интересно!
+    
+    # Ответы
+    
+    # Auth
+    AuthTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+          
+    # Post
+    PostResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        author:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        likesCount:
+          type: integer
+        commentsCount:
+          type: integer
+        isLiked:
+          type: boolean
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+    
+    PaginatedPostsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostResponse'
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 5
+        totalItems:
+          type: integer
+          example: 42
+        totalPages:
+          type: integer
+          example: 9
+      
+    # Comment
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "comment123456"
+        author:
+          type: string
+          example: "user123456"
+        content:
+          type: string
+          example: "Очень интересно!"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-04T13:00:00Z"
+      
+    # Locations
+    LocationResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Адыгея, Россия
+        popularityScore:
+          type: integer
+          example: 1000
+        postCount:
+          type: integer
+          example: 42
+        imagePreview:
+          type: string
+          example: https://example.com/location_preview.jpg
