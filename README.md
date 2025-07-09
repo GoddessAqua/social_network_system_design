@@ -115,7 +115,7 @@ RPS(read) = 10 000 000 * 20 / 86 400 ~ 2314
     Disks_for_iops = iops / disk_iops = 116 / 10000 = 0.0116 -> 1 диск
     Disks = max(ceil(Disks_for_capacity), ceil(Disks_for_throughput), ceil(Disks_for_iops)) = max(1, 1, 1) = 1 диск
 
-#### Итого : 2 HDD по 2 ТВ или 1 SATA SSD по 2 ТВ или 1 NVMe SSD по 2 ТБ
+#### Итого : 2 HDD по 2 ТВ или 1 SATA SSD по 2 ТВ или 1 NVMe SSD по 2 ТБ -> SATA SSD
 
 ### 2. Оценки (лайки + комментарии):
 
@@ -142,7 +142,7 @@ RPS(read) = 10 000 000 * 20 / 86 400 ~ 2314
     Disks_for_iops = iops / disk_iops = 1157 / 10000 = 0.1157 -> 1 диск
     Disks = max(ceil(Disks_for_capacity), ceil(Disks_for_throughput), ceil(Disks_for_iops)) = max(2, 1, 1) = 2 диска
 
-#### Итого : 12 HDD по 32 ТВ или 2 SATA SSD по 32 ТВ или 2 NVMe SSD по 32 ТБ
+#### Итого : 12 HDD по 32 ТВ или 2 SATA SSD по 32 ТВ или 2 NVMe SSD по 32 ТБ -> SATA SSD
 
 ## Для S3:
 
@@ -169,7 +169,7 @@ RPS(read) = 10 000 000 * 20 / 86 400 ~ 2314
     Disks_for_iops = iops / disk_iops = (116 + 1157 + 2314) / 10000 = 0.3587 -> 1 диск
     Disks = max(ceil(Disks_for_capacity), ceil(Disks_for_throughput), ceil(Disks_for_iops)) = max(549, 1, 1) = 549 дисков
 
-#### Итого : 515 HDD по 32 ТВ или 165 SATA SSD по 100 TB
+#### Итого : 515 HDD по 32 ТВ или 165 SATA SSD по 100 TB -> HDD
 
 ## Для Elasticsearch:
 
@@ -196,4 +196,4 @@ Capacity = (58 kB/s + 1041,3 kB/s) * 86400 сек/день * 365 дней ~ 33.9
     Disks_for_iops = iops / disk_iops = 1273 / 10000 = 0.1273 -> 1 диск
     Disks = max(ceil(Disks_for_capacity), ceil(Disks_for_throughput), ceil(Disks_for_iops)) = max(2, 1, 1) = 2 диска
 
-#### Итого : 12 HDD по 32 ТВ или 2 SATA SSD по 32 ТВ или 2 NVMe SSD по 32 ТБ
+#### Итого : 12 HDD по 32 ТВ или 2 SATA SSD по 32 ТВ или 2 NVMe SSD по 32 ТБ -> SATA SSD
