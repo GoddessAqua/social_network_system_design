@@ -3,6 +3,7 @@
 | Пользователи                   | MongoDB       | Коллекция 'users'                                                    |
 | Посты                          | MongoDB       | Коллекция 'posts'                                                    |
 | Комментарии                    | MongoDB       | Коллекция 'comments'                                                 |
+| Лайки                          | MongoDB       | Коллекция 'likes'                                                    |
 | Подписки                       | MongoDB       | Коллекция 'follows'                                                  |
 | Места путешествий              | MongoDB       | Коллекция 'places'                                                   |
 | Фотографии                     | S3            | Ссылки хранятся в 'posts.photos'                                     |

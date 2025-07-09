@@ -16,7 +16,6 @@ Table posts {
   description string
   photo_urls string[] // S3 URLs
   created_at datetime
-  liked_by_user_ids objectid[]
   comments_count int
 }
 
@@ -25,6 +24,13 @@ Table comments {
   post_id objectid [ref: > posts._id]
   author_id objectid [ref: > users._id]
   text string
+  created_at datetime
+}
+
+Table likes {
+  _id objectid [pk]
+  post_id objectid [ref: > posts._id]
+  user_id objectid [ref: > users._id]
   created_at datetime
 }
 
